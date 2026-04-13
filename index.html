@@ -22,7 +22,10 @@
     <div class="section" style="flex: 1; display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
             <h2 style="margin: 0; border: none;">Histórico / Recepção</h2>
-            <button id="btnRefresh" style="width: auto; padding: 3px 8px; margin: 0;">Atualizar</button>
+            <div style="display: flex; gap: 5px;">
+                <button id="btnRefresh" style="width: auto; padding: 3px 8px; margin: 0;">Atualizar</button>
+                <button id="btnClearHistory" style="width: auto; padding: 3px 8px; margin: 0; background-color: #5a1a1a; border-color: #ff4081;">Limpar Tudo</button>
+            </div>
         </div>
         
         <div class="input-group" style="flex-direction: row; align-items: center; gap: 5px;">
@@ -31,8 +34,10 @@
         </div>
 
         <div id="historyList" class="history-container">
-            <!-- Itens do histórico aparecerão aqui -->
+            </div>
         </div>
+
+        
     </div>
 
     <script src="main.js"></script>

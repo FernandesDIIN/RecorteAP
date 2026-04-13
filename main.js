@@ -4,6 +4,7 @@ let fs;
 let path;
 let destinationFolder = "";
 let history = [];
+let imageCounter = 1; // NOVA VARIÁVEL
 
 // Inicialização
 window.onload = function() {
@@ -22,6 +23,7 @@ window.onload = function() {
         document.getElementById('btnFullWidth').addEventListener('click', createFullWidthSelection);
         document.getElementById('btnSync').addEventListener('click', syncFromPhotoshop);
         document.getElementById('btnRefresh').addEventListener('click', checkFilesReady);
+        document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
         
     } catch (e) {
         console.error("Erro ao inicializar (verifique se está rodando no CEP):", e);
@@ -30,21 +32,61 @@ window.onload = function() {
     }
 };
 
+function clearAllHistory() {
+    // 1. Pedir confirmação (Segurança)
+    const confirmacao = confirm("Deseja apagar TODO o histórico e DELETAR permanentemente as imagens da pasta de destino?");
+    
+    if (confirmacao) {
+        try {
+            // 2. Deletar arquivos físicos do HD
+            if (fs && destinationFolder && history.length > 0) {
+                history.forEach(item => {
+                    // Monta o caminho completo: Pasta + Nome do arquivo (ex: 1 Img.jpg)
+                    const filePath = path.join(destinationFolder, item.filename);
+                    
+                    try {
+                        // Verifica se o arquivo ainda existe antes de tentar apagar
+                        if (fs.existsSync(filePath)) {
+                            fs.unlinkSync(filePath); // Comando Node.js para deletar arquivo
+                            console.log("Deletado:", item.filename);
+                        }
+                    } catch (err) {
+                        console.error("Não foi possível deletar:", item.filename, err);
+                    }
+                });
+            }
+
+            // 3. Limpar a memória do Plugin
+            history = []; // Esvazia a lista
+            imageCounter = 1; // Reseta o contador para "1 Img"
+            
+            // 4. Salvar estado e atualizar interface
+            saveSettings();
+            renderHistory();
+            
+            alert("Sistema e pasta limpos com sucesso!");
+            
+        } catch (e) {
+            alert("Erro durante a limpeza: " + e.toString());
+        }
+    }
+}
+
 function loadSettings() {
     destinationFolder = localStorage.getItem('recorteap_folder') || "";
-    if (destinationFolder) {
-        document.getElementById('folderPathDisplay').innerText = destinationFolder;
-    }
+    if (destinationFolder) document.getElementById('folderPathDisplay').innerText = destinationFolder;
     
     const savedHistory = localStorage.getItem('recorteap_history');
-    if (savedHistory) {
-        history = JSON.parse(savedHistory);
-    }
+    if (savedHistory) history = JSON.parse(savedHistory);
+
+    // Carrega o número atual
+    imageCounter = parseInt(localStorage.getItem('recorteap_counter')) || 1;
 }
 
 function saveSettings() {
     localStorage.setItem('recorteap_folder', destinationFolder);
     localStorage.setItem('recorteap_history', JSON.stringify(history));
+    localStorage.setItem('recorteap_counter', imageCounter); // Salva o número
 }
 
 function chooseFolder() {
@@ -62,7 +104,7 @@ function chooseFolder() {
 function createFullWidthSelection() {
     if (!csInterface) return;
     csInterface.evalScript('createFullWidthSelection()', function(result) {
-        if (result.startsWith("Erro")) {
+        if (result && result.startsWith("Erro")) {
             alert(result);
         }
     });
@@ -77,21 +119,14 @@ function syncFromPhotoshop() {
     }
     
     // Gerar ID único
-    const date = new Date();
-    const timestamp = date.getFullYear().toString() + 
-                     (date.getMonth()+1).toString().padStart(2, '0') + 
-                     date.getDate().toString().padStart(2, '0') + "_" + 
-                     date.getHours().toString().padStart(2, '0') + 
-                     date.getMinutes().toString().padStart(2, '0') + 
-                     date.getSeconds().toString().padStart(2, '0');
-                     
-    const id = "Img_" + timestamp;
+    const id = imageCounter + " Img";
+    imageCounter++; // Prepara para a próxima imagem
     
     // Escapar barras para o ExtendScript
     const safePath = destinationFolder.replace(/\\/g, '/');
     
     csInterface.evalScript(`syncFromPhotoshop("${safePath}", "${id}")`, function(result) {
-        if (result.startsWith("Erro")) {
+        if (result && result.startsWith("Erro")) {
             alert(result);
             return;
         }
@@ -128,8 +163,6 @@ function checkFilesReady() {
         
         const filePath = path.join(destinationFolder, item.filename);
         if (fs.existsSync(filePath)) {
-            // Se o arquivo existe, verificamos se ele foi modificado recentemente
-            // Para simplificar, apenas marcamos como ready se ele existe
             if (item.status !== 'ready') {
                 item.status = 'ready';
                 changed = true;
@@ -165,7 +198,7 @@ function applyToLayer(id) {
     const script = `applyToLayer("${safePath}", ${item.coords.left}, ${item.coords.top}, ${item.coords.width}, ${item.coords.height}, ${saturation})`;
     
     csInterface.evalScript(script, function(result) {
-        if (result.startsWith("Erro")) {
+        if (result && result.startsWith("Erro")) {
             alert(result);
             return;
         }

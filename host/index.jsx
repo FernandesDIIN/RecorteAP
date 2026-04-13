@@ -9,17 +9,14 @@ function createFullWidthSelection() {
         var w = doc.width.value;
         var h = doc.height.value;
         
-        // Cria um letreiro cobrindo a largura toda e com 800px de altura no centro da imagem
-        var top = (h / 2) - 400;
-        var bottom = (h / 2) + 400;
-        if (top < 0) top = 0;
-        if (bottom > h) bottom = h;
-
-        var shape = [
-            [0, top], [w, top], [w, bottom], [0, bottom]
-        ];
+        // Cria seleção de largura total com altura de 600px no centro
+        var top = (h / 2) - 300;
+        var bottom = (h / 2) + 300;
+        doc.selection.select([[0, top], [w, top], [w, bottom], [0, bottom]]);
         
-        doc.selection.select(shape);
+        // APENAS ATIVA A FERRAMENTA (Sem erro de comando desconhecido)
+        app.currentTool = "marqueeRectTool";
+        
         app.preferences.rulerUnits = originalRuler;
         return "OK";
     } catch(e) {
@@ -30,35 +27,43 @@ function createFullWidthSelection() {
 function syncFromPhotoshop(folderPath, id) {
     try {
         var doc = app.activeDocument;
+        var originalRuler = app.preferences.rulerUnits;
+        app.preferences.rulerUnits = Units.PIXELS;
+
+        // Arredondamento matemático para evitar o erro de 0.5px
         var bounds = doc.selection.bounds;
+        var left = Math.round(bounds[0].value);
+        var top = Math.round(bounds[1].value);
+        var right = Math.round(bounds[2].value);
+        var bottom = Math.round(bounds[3].value);
         
-        var left = bounds[0].value;
-        var top = bounds[1].value;
-        var right = bounds[2].value;
-        var bottom = bounds[3].value;
+        // Garante que o recorte seja baseado em pixels inteiros
+        doc.selection.select([[left, top], [right, top], [right, bottom], [left, bottom]]);
+        
         var width = right - left;
         var height = bottom - top;
 
         var tempDoc = doc.duplicate("Temp_RecorteAP");
         tempDoc.flatten();
-        tempDoc.crop(bounds);
+        tempDoc.crop([UnitValue(left, "px"), UnitValue(top, "px"), UnitValue(right, "px"), UnitValue(bottom, "px")]);
         
         if (tempDoc.mode != DocumentMode.RGB) { tempDoc.changeMode(ChangeMode.RGB); }
         tempDoc.bitsPerChannel = BitsPerChannelType.EIGHT;
         
-        // Converte barras do Windows (\) para barras normais (/) para não quebrar o ExtendScript
         var cleanPath = folderPath.replace(/\\/g, '/');
         var filePath = cleanPath + "/" + id + ".jpg";
         var file = new File(filePath);
         
         var saveOptions = new JPEGSaveOptions();
-        saveOptions.quality = 12; // Máxima Qualidade
+        saveOptions.quality = 12;
         tempDoc.saveAs(file, saveOptions, true, Extension.LOWERCASE);
         tempDoc.close(SaveOptions.DONOTSAVECHANGES);
         
-        // Devolve as coordenadas como JSON stringificado
+        app.preferences.rulerUnits = originalRuler;
+        // Retorna as coordenadas arredondadas
         return '{"left":' + left + ', "top":' + top + ', "width":' + width + ', "height":' + height + '}';
     } catch(e) {
+        app.preferences.rulerUnits = originalRuler || Units.PIXELS;
         return "Erro|" + e.toString();
     }
 }
@@ -70,12 +75,20 @@ function applyToLayer(imagePath, left, top, width, height, saturation) {
         app.preferences.rulerUnits = Units.PIXELS;
 
         var cleanPath = imagePath.replace(/\\/g, '/');
+        
+        // --- NOVA TRAVA DE SEGURANÇA ---
+        var file = new File(cleanPath);
+        if (!file.exists) {
+            app.preferences.rulerUnits = originalRuler;
+            return "Erro|A imagem editada nao foi encontrada na pasta.";
+        }
+        // -------------------------------
 
         // 1. Inserir a imagem (Place Embedded)
         var idPlc = charIDToTypeID( "Plc " );
         var desc = new ActionDescriptor();
         var idnull = charIDToTypeID( "null" );
-        desc.putPath( idnull, new File( cleanPath ) );
+        desc.putPath( idnull, file );
         var idFTcs = charIDToTypeID( "FTcs" );
         var idQCSt = charIDToTypeID( "QCSt" );
         var idQcsa = charIDToTypeID( "Qcsa" );
@@ -89,7 +102,7 @@ function applyToLayer(imagePath, left, top, width, height, saturation) {
         var currentTop = newLayer.bounds[1].value;
         newLayer.translate(parseFloat(left) - currentLeft, parseFloat(top) - currentTop);
 
-        // 3. Esmagar/Ajustar para o Tamanho Original do Recorte
+        // 3. Esmagar/Ajustar para o Tamanho Original do Recorte (Força a Escala Absoluta)
         var currentW = newLayer.bounds[2].value - newLayer.bounds[0].value;
         var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
         var scaleX = (parseFloat(width) / currentW) * 100;
@@ -98,7 +111,7 @@ function applyToLayer(imagePath, left, top, width, height, saturation) {
         
         newLayer.rasterize(RasterizeType.ENTIRELAYER);
 
-        // 4. Aplicar Saturação Automática (+1, +2, etc)
+        // 4. Aplicar Saturação Automática (Seu bloco original intacto)
         var satVal = parseInt(saturation);
         if (satVal !== 0 && !isNaN(satVal)) {
             var idHStr = charIDToTypeID( "HStr" );
