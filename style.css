@@ -1,0 +1,176 @@
+:root {
+    --bg-color: #323232;
+    --panel-bg: #252525;
+    --text-color: #e0e0e0;
+    --border-color: #454545;
+    --accent-color: #ff4081; /* Rosa para o letreiro RecorteAP */
+    --accent-hover: #f50057;
+    --btn-bg: #4a4a4a;
+    --btn-hover: #5a5a5a;
+    --success-color: #4caf50;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    margin: 0;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+h2 {
+    font-size: 14px;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #fff;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+
+.section {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+button {
+    background-color: var(--btn-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    width: 100%;
+    margin-bottom: 5px;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: var(--btn-hover);
+}
+
+button.primary {
+    background-color: var(--accent-color);
+    color: white;
+    border-color: var(--accent-hover);
+}
+
+button.primary:hover {
+    background-color: var(--accent-hover);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.input-group label {
+    margin-bottom: 3px;
+    font-size: 11px;
+    color: #aaa;
+}
+
+input[type="text"], input[type="number"] {
+    background-color: #1e1e1e;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 5px;
+    border-radius: 3px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.row {
+    display: flex;
+    gap: 5px;
+}
+
+.row button {
+    flex: 1;
+}
+
+/* Histórico */
+.history-container {
+    flex: 1;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.history-item {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.history-item.ready {
+    border-left: 3px solid var(--success-color);
+}
+
+.history-item.done {
+    opacity: 0.5;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-id {
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #aaa;
+}
+
+.ready .status-indicator {
+    background-color: var(--success-color);
+}
+
+.history-actions {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.sat-input {
+    width: 50px !important;
+}
+
+.apply-btn {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+#folderPathDisplay {
+    font-size: 10px;
+    color: #aaa;
+    word-break: break-all;
+    margin-bottom: 5px;
+    min-height: 12px;
+}
