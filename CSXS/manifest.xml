@@ -47,6 +47,18 @@
                             <Width>2000</Width>
                         </MaxSize>
                     </Geometry>
+                    <Icons>
+                        <Icon Type="Normal" Path="./icons/icon16.png"/>
+                        <Icon Type="RollOver" Path="./icons/icon16.png"/>
+                        <Icon Type="Disabled" Path="./icons/icon16.png"/>
+                        <Icon Type="DarkNormal" Path="./icons/icon16.png"/>
+                        <Icon Type="DarkRollOver" Path="./icons/icon16.png"/>
+                        <Icon Type="Normal" Path="./icons/icon24.png"/>
+                        <Icon Type="Normal" Path="./icons/icon32.png"/>
+                        <Icon Type="Normal" Path="./icons/icon48.png"/>
+                        <Icon Type="Normal" Path="./icons/icon64.png"/>
+                        <Icon Type="Normal" Path="./icons/icon128.png"/>
+                    </Icons>
                 </UI>
             </DispatchInfo>
         </Extension>
