@@ -8,20 +8,13 @@ function createFullWidthSelection() {
         
         var w = doc.width.value;
         var h = doc.height.value;
-        
-        // Cria seleção de largura total com altura de 600px no centro
         var top = (h / 2) - 300;
         var bottom = (h / 2) + 300;
         doc.selection.select([[0, top], [w, top], [w, bottom], [0, bottom]]);
-        
-        // APENAS ATIVA A FERRAMENTA (Sem erro de comando desconhecido)
         app.currentTool = "marqueeRectTool";
-        
         app.preferences.rulerUnits = originalRuler;
         return "OK";
-    } catch(e) {
-        return "Erro|" + e.toString();
-    }
+    } catch(e) { return "Erro|" + e.toString(); }
 }
 
 function syncFromPhotoshop(folderPath, id) {
@@ -30,16 +23,13 @@ function syncFromPhotoshop(folderPath, id) {
         var originalRuler = app.preferences.rulerUnits;
         app.preferences.rulerUnits = Units.PIXELS;
 
-        // Arredondamento matemático para evitar o erro de 0.5px
         var bounds = doc.selection.bounds;
         var left = Math.round(bounds[0].value);
         var top = Math.round(bounds[1].value);
         var right = Math.round(bounds[2].value);
         var bottom = Math.round(bounds[3].value);
         
-        // Garante que o recorte seja baseado em pixels inteiros
         doc.selection.select([[left, top], [right, top], [right, bottom], [left, bottom]]);
-        
         var width = right - left;
         var height = bottom - top;
 
@@ -56,11 +46,13 @@ function syncFromPhotoshop(folderPath, id) {
         
         var saveOptions = new JPEGSaveOptions();
         saveOptions.quality = 12;
+        // TENTA EMBUTIR O PERFIL NA SAÍDA PARA AJUDAR O CELULAR
+        saveOptions.embedColorProfile = true; 
+        
         tempDoc.saveAs(file, saveOptions, true, Extension.LOWERCASE);
         tempDoc.close(SaveOptions.DONOTSAVECHANGES);
         
         app.preferences.rulerUnits = originalRuler;
-        // Retorna as coordenadas arredondadas
         return '{"left":' + left + ', "top":' + top + ', "width":' + width + ', "height":' + height + '}';
     } catch(e) {
         app.preferences.rulerUnits = originalRuler || Units.PIXELS;
@@ -68,70 +60,49 @@ function syncFromPhotoshop(folderPath, id) {
     }
 }
 
-function applyToLayer(imagePath, left, top, width, height, saturation) {
+function applyToLayer(imagePath, left, top, width, height, fixProfile) {
     try {
-        var doc = app.activeDocument;
+        var originalDoc = app.activeDocument;
         var originalRuler = app.preferences.rulerUnits;
         app.preferences.rulerUnits = Units.PIXELS;
-
         var cleanPath = imagePath.replace(/\\/g, '/');
         
-        // --- NOVA TRAVA DE SEGURANÇA ---
         var file = new File(cleanPath);
         if (!file.exists) {
             app.preferences.rulerUnits = originalRuler;
             return "Erro|A imagem editada nao foi encontrada na pasta.";
         }
-        // -------------------------------
 
-        // 1. Inserir a imagem (Place Embedded)
-        var idPlc = charIDToTypeID( "Plc " );
-        var desc = new ActionDescriptor();
-        var idnull = charIDToTypeID( "null" );
-        desc.putPath( idnull, file );
-        var idFTcs = charIDToTypeID( "FTcs" );
-        var idQCSt = charIDToTypeID( "QCSt" );
-        var idQcsa = charIDToTypeID( "Qcsa" );
-        desc.putEnumerated( idFTcs, idQCSt, idQcsa );
-        executeAction( idPlc, desc, DialogModes.NO );
+        // 1. O TRUQUE DO "EDITOR DE FOTOS": Abre a imagem isolada
+        var tempDoc = app.open(file);
 
-        var newLayer = doc.activeLayer;
+        // 2. FORÇA O PERFIL DE COR (Se a opção estiver marcada no painel)
+        if (fixProfile === true || fixProfile === "true") {
+            // Isto diz para o Photoshop parar de ler como cinza e forçar a leitura do documento principal
+            tempDoc.colorProfileType = ColorProfile.WORKING; 
+        }
+
+        // 3. Copia a imagem corrigida
+        tempDoc.selection.selectAll();
+        tempDoc.selection.copy();
+        tempDoc.close(SaveOptions.DONOTSAVECHANGES); // Fecha sem salvar o temporário
+
+        // 4. Cola de volta no documento original
+        originalDoc.activeLayer = originalDoc.activeLayer; // Garante o foco no documento
+        originalDoc.paste();
+        var newLayer = originalDoc.activeLayer;
         
-        // 2. Mover para a Coordenada Exata
+        // 5. Mover para a Coordenada Exata
         var currentLeft = newLayer.bounds[0].value;
         var currentTop = newLayer.bounds[1].value;
         newLayer.translate(parseFloat(left) - currentLeft, parseFloat(top) - currentTop);
 
-        // 3. Esmagar/Ajustar para o Tamanho Original do Recorte (Força a Escala Absoluta)
+        // 6. Esmagar/Ajustar Escala Original
         var currentW = newLayer.bounds[2].value - newLayer.bounds[0].value;
         var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
         var scaleX = (parseFloat(width) / currentW) * 100;
         var scaleY = (parseFloat(height) / currentH) * 100;
         newLayer.resize(scaleX, scaleY, AnchorPosition.TOPLEFT);
-        
-        newLayer.rasterize(RasterizeType.ENTIRELAYER);
-
-        // 4. Aplicar Saturação Automática (Seu bloco original intacto)
-        var satVal = parseInt(saturation);
-        if (satVal !== 0 && !isNaN(satVal)) {
-            var idHStr = charIDToTypeID( "HStr" );
-            var descSatMaster = new ActionDescriptor();
-            var idpresetKind = stringIDToTypeID( "presetKind" );
-            var idpresetKindType = stringIDToTypeID( "presetKindType" );
-            var idpresetKindCustom = stringIDToTypeID( "presetKindCustom" );
-            descSatMaster.putEnumerated( idpresetKind, idpresetKindType, idpresetKindCustom );
-            descSatMaster.putBoolean( charIDToTypeID( "Clrz" ), false );
-            
-            var listAdjs = new ActionList();
-            var descSatProps = new ActionDescriptor();
-            descSatProps.putInteger( charIDToTypeID( "H   " ), 0 ); // Matiz
-            descSatProps.putInteger( charIDToTypeID( "Strt" ), satVal ); // SATURAÇÃO
-            descSatProps.putInteger( charIDToTypeID( "Lght" ), 0 ); // Luminosidade
-            
-            listAdjs.putObject( stringIDToTypeID( "hueSatAdjustmentV2" ), descSatProps );
-            descSatMaster.putList( charIDToTypeID( "Adjs" ), listAdjs );
-            executeAction( idHStr, descSatMaster, DialogModes.NO );
-        }
 
         app.preferences.rulerUnits = originalRuler;
         return "OK";
