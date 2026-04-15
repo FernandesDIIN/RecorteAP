@@ -46,7 +46,6 @@ function syncFromPhotoshop(folderPath, id) {
         
         var saveOptions = new JPEGSaveOptions();
         saveOptions.quality = 12;
-        // TENTA EMBUTIR O PERFIL NA SAÍDA PARA AJUDAR O CELULAR
         saveOptions.embedColorProfile = true; 
         
         tempDoc.saveAs(file, saveOptions, true, Extension.LOWERCASE);
@@ -61,6 +60,10 @@ function syncFromPhotoshop(folderPath, id) {
 }
 
 function applyToLayer(imagePath, left, top, width, height, fixProfile) {
+    // 🛡️ O ESCUDO ANTI-POP-UP: Guarda o estado atual e força o modo silencioso!
+    var originalDialogs = app.displayDialogs;
+    app.displayDialogs = DialogModes.NO; 
+    
     try {
         var originalDoc = app.activeDocument;
         var originalRuler = app.preferences.rulerUnits;
@@ -70,34 +73,28 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         var file = new File(cleanPath);
         if (!file.exists) {
             app.preferences.rulerUnits = originalRuler;
+            app.displayDialogs = originalDialogs;
             return "Erro|A imagem editada nao foi encontrada na pasta.";
         }
 
-        // 1. O TRUQUE DO "EDITOR DE FOTOS": Abre a imagem isolada
         var tempDoc = app.open(file);
 
-        // 2. FORÇA O PERFIL DE COR (Se a opção estiver marcada no painel)
         if (fixProfile === true || fixProfile === "true") {
-            // Isto diz para o Photoshop parar de ler como cinza e forçar a leitura do documento principal
             tempDoc.colorProfileType = ColorProfile.WORKING; 
         }
 
-        // 3. Copia a imagem corrigida
         tempDoc.selection.selectAll();
         tempDoc.selection.copy();
-        tempDoc.close(SaveOptions.DONOTSAVECHANGES); // Fecha sem salvar o temporário
+        tempDoc.close(SaveOptions.DONOTSAVECHANGES);
 
-        // 4. Cola de volta no documento original
-        originalDoc.activeLayer = originalDoc.activeLayer; // Garante o foco no documento
+        originalDoc.activeLayer = originalDoc.activeLayer; 
         originalDoc.paste();
         var newLayer = originalDoc.activeLayer;
         
-        // 5. Mover para a Coordenada Exata
         var currentLeft = newLayer.bounds[0].value;
         var currentTop = newLayer.bounds[1].value;
         newLayer.translate(parseFloat(left) - currentLeft, parseFloat(top) - currentTop);
 
-        // 6. Esmagar/Ajustar Escala Original
         var currentW = newLayer.bounds[2].value - newLayer.bounds[0].value;
         var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
         var scaleX = (parseFloat(width) / currentW) * 100;
@@ -105,9 +102,11 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         newLayer.resize(scaleX, scaleY, AnchorPosition.TOPLEFT);
 
         app.preferences.rulerUnits = originalRuler;
+        app.displayDialogs = originalDialogs; // Devolve as caixas de diálogo ao normal
         return "OK";
     } catch(e) {
         app.preferences.rulerUnits = Units.PIXELS;
+        app.displayDialogs = originalDialogs; // Devolve ao normal até se der erro
         return "Erro|" + e.toString();
     }
 }
