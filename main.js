@@ -10,7 +10,6 @@ window.onload = function() {
         csInterface = new CSInterface();
         fs = require('fs');
         path = require('path');
-        
         loadSettings();
         renderHistory();
         
@@ -20,25 +19,24 @@ window.onload = function() {
         document.getElementById('btnRefresh').addEventListener('click', checkFilesReady);
         document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
     } catch (e) {
-        document.getElementById('folderPathDisplay').innerText = "Modo de teste (Fora do Photoshop)";
+        document.getElementById('folderPathDisplay').innerText = "Modo de teste";
     }
 };
 
 function clearAllHistory() {
-    const confirmacao = confirm("Deseja apagar TODO o histórico e DELETAR permanentemente as imagens da pasta de destino?");
-    if (confirmacao) {
+    if (confirm("Apagar todo o histórico e arquivos?")) {
         try {
             if (fs && destinationFolder && history.length > 0) {
                 history.forEach(item => {
                     const filePath = path.join(destinationFolder, item.filename);
-                    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (err) {}
+                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
                 });
             }
             history = []; 
             imageCounter = 1; 
             saveSettings();
             renderHistory();
-        } catch (e) { alert("Erro durante a limpeza: " + e.toString()); }
+        } catch (e) {}
     }
 }
 
@@ -57,8 +55,7 @@ function saveSettings() {
 }
 
 function chooseFolder() {
-    if (!csInterface) return;
-    const result = window.cep.fs.showOpenDialog(false, true, "Selecione a pasta de destino", destinationFolder);
+    const result = window.cep.fs.showOpenDialog(false, true, "Selecione a pasta", destinationFolder);
     if (result.data && result.data.length > 0) {
         destinationFolder = result.data[0];
         document.getElementById('folderPathDisplay').innerText = destinationFolder;
@@ -68,32 +65,38 @@ function chooseFolder() {
 }
 
 function createFullWidthSelection() {
-    if (!csInterface) return;
     csInterface.evalScript('createFullWidthSelection()');
 }
 
 function syncFromPhotoshop() {
-    if (!csInterface) return;
-    if (!destinationFolder) { alert("Selecione uma pasta de destino primeiro."); return; }
+    if (!destinationFolder) { alert("Selecione a pasta primeiro."); return; }
     
-    const id = imageCounter + " Img";
-    imageCounter++; 
-    const safePath = destinationFolder.replace(/\\/g, '/');
-    
-    csInterface.evalScript(`syncFromPhotoshop("${safePath}", "${id}")`, function(result) {
-        if (result && result.startsWith("Erro")) { alert(result); return; }
-        try {
-            const coords = JSON.parse(result);
-            history.unshift({
-                id: id,
-                filename: id + ".jpg",
-                coords: coords,
-                status: 'waiting'
-            });
-            saveSettings();
-            renderHistory();
-            checkFilesReady();
-        } catch (e) { alert("Erro: " + e); }
+    // CAPTURA O NOME DA PÁGINA
+    csInterface.evalScript('app.activeDocument.name.replace(/\\.[^\\.]+$/, "")', function(docName) {
+        if (!docName || docName === "EvalScript error.") docName = "Page";
+        
+        // Limpa o nome para o ID ficar bonito
+        const safeDocName = docName.replace(/[^a-zA-Z0-9_-]/g, '');
+        const id = imageCounter + " Img" + safeDocName;
+        imageCounter++; 
+        
+        const safePath = destinationFolder.replace(/\\/g, '/');
+        
+        csInterface.evalScript(`syncFromPhotoshop("${safePath}", "${id}")`, function(result) {
+            if (result.startsWith("Erro")) { alert(result); return; }
+            try {
+                const coords = JSON.parse(result);
+                history.unshift({
+                    id: id,
+                    filename: id + ".jpg",
+                    coords: coords,
+                    status: 'waiting'
+                });
+                saveSettings();
+                renderHistory();
+                checkFilesReady();
+            } catch (e) { alert("Erro: " + e); }
+        });
     });
 }
 
@@ -105,29 +108,22 @@ function checkFilesReady() {
         const filePath = path.join(destinationFolder, item.filename);
         if (fs.existsSync(filePath)) {
             if (item.status !== 'ready') { item.status = 'ready'; changed = true; }
-        } else {
-            if (item.status !== 'waiting') { item.status = 'waiting'; changed = true; }
         }
     });
     if (changed) { saveSettings(); renderHistory(); }
 }
 
 function applyToLayer(id) {
-    if (!csInterface) return;
     const itemIndex = history.findIndex(h => h.id === id);
     if (itemIndex === -1) return;
-    
     const item = history[itemIndex];
-    const filePath = path.join(destinationFolder, item.filename);
-    const safePath = filePath.replace(/\\/g, '/');
-    
-    // Pega o estado do checkbox
+    const safePath = path.join(destinationFolder, item.filename).replace(/\\/g, '/');
     const fixProfile = document.getElementById('chkFixProfile').checked;
     
     const script = `applyToLayer("${safePath}", ${item.coords.left}, ${item.coords.top}, ${item.coords.width}, ${item.coords.height}, ${fixProfile})`;
     
     csInterface.evalScript(script, function(result) {
-        if (result && result.startsWith("Erro")) { alert(result); return; }
+        if (result.startsWith("Erro")) { alert(result); return; }
         history[itemIndex].status = 'done';
         saveSettings();
         renderHistory();
@@ -139,7 +135,7 @@ function renderHistory() {
     container.innerHTML = '';
     
     if (history.length === 0) {
-        container.innerHTML = '<div style="color: #aaa; text-align: center; padding: 10px;">Nenhum recorte no histórico</div>';
+        container.innerHTML = '<div style="color: #aaa; text-align: center; padding: 10px;">Vazio</div>';
         return;
     }
     
@@ -156,14 +152,11 @@ function renderHistory() {
                     <div class="status-indicator"></div>
                 </div>
             </div>
-            <div style="font-size: 10px; color: #aaa;">
-                Pos: [${Math.round(item.coords.left)}, ${Math.round(item.coords.top)}]
-            </div>
             <div class="history-actions" style="justify-content: flex-end;">
                 <button class="apply-btn ${item.status === 'ready' ? 'primary' : ''}" 
                         onclick="applyToLayer('${item.id}')" 
                         ${item.status === 'waiting' ? 'disabled' : ''}>
-                    Aplicar na Camada
+                    Aplicar
                 </button>
             </div>
         `;
