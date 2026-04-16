@@ -60,7 +60,7 @@ function syncFromPhotoshop(folderPath, id) {
 }
 
 function applyToLayer(imagePath, left, top, width, height, fixProfile) {
-    // 🛡️ O ESCUDO ANTI-POP-UP: Guarda o estado atual e força o modo silencioso!
+    // 🛡️ MODO SILENCIOSO ATIVADO
     var originalDialogs = app.displayDialogs;
     app.displayDialogs = DialogModes.NO; 
     
@@ -72,13 +72,11 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         
         var file = new File(cleanPath);
         if (!file.exists) {
-            app.preferences.rulerUnits = originalRuler;
             app.displayDialogs = originalDialogs;
-            return "Erro|A imagem editada nao foi encontrada na pasta.";
+            return "Erro|Arquivo não encontrado.";
         }
 
         var tempDoc = app.open(file);
-
         if (fixProfile === true || fixProfile === "true") {
             tempDoc.colorProfileType = ColorProfile.WORKING; 
         }
@@ -87,7 +85,6 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         tempDoc.selection.copy();
         tempDoc.close(SaveOptions.DONOTSAVECHANGES);
 
-        originalDoc.activeLayer = originalDoc.activeLayer; 
         originalDoc.paste();
         var newLayer = originalDoc.activeLayer;
         
@@ -97,16 +94,13 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
 
         var currentW = newLayer.bounds[2].value - newLayer.bounds[0].value;
         var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
-        var scaleX = (parseFloat(width) / currentW) * 100;
-        var scaleY = (parseFloat(height) / currentH) * 100;
-        newLayer.resize(scaleX, scaleY, AnchorPosition.TOPLEFT);
+        newLayer.resize((parseFloat(width) / currentW) * 100, (parseFloat(height) / currentH) * 100, AnchorPosition.TOPLEFT);
 
         app.preferences.rulerUnits = originalRuler;
-        app.displayDialogs = originalDialogs; // Devolve as caixas de diálogo ao normal
+        app.displayDialogs = originalDialogs; // Devolve ao normal
         return "OK";
     } catch(e) {
-        app.preferences.rulerUnits = Units.PIXELS;
-        app.displayDialogs = originalDialogs; // Devolve ao normal até se der erro
+        app.displayDialogs = originalDialogs;
         return "Erro|" + e.toString();
     }
 }

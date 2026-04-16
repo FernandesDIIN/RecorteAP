@@ -19,29 +19,25 @@
         <button id="btnSync" class="primary">Recortar</button>
     </div>
 
-    <div class="scroll-wrapper">
+    <div class="section" style="flex: 1; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <h2 style="margin: 0; border: none;">Histórico / Recepção</h2>
+            <div style="display: flex; gap: 5px;">
+                <button id="btnRefresh" style="width: auto; padding: 3px 8px; margin: 0;">Atualizar</button>
+                <button id="btnClearHistory" style="width: auto; padding: 3px 8px; margin: 0; background-color: #5a1a1a; border-color: #ff4081;">Limpar Tudo</button>
+            </div>
+        </div>
         
-        <div style="flex-shrink: 0; margin-bottom: 5px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h2 style="margin: 0; border: none;">Histórico / Recepção</h2>
-                <div style="display: flex; gap: 5px;">
-                    <button id="btnRefresh" style="width: auto; padding: 3px 8px; margin: 0;">Atualizar</button>
-                    <button id="btnClearHistory" style="width: auto; padding: 3px 8px; margin: 0; background-color: #5a1a1a; border-color: #ff4081;">Limpar Tudo</button>
-                </div>
-            </div>
-            
-            <div style="background: #1e1e1e; padding: 6px 8px; border-radius: 4px; border: 1px solid #333;">
-                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #10b981; font-weight: bold; font-size: 12px;">
-                    <input type="checkbox" id="chkFixProfile" checked>
-                    Corrigir Perfil de Cor (Auto)
-                </label>
-                <p style="font-size: 9px; color: #71717a; margin: 3px 0 0 20px;">Silencioso: Sem pop-ups de RGB na aplicação em lote!</p>
-            </div>
+        <div style="background: #1e1e1e; padding: 6px 8px; border-radius: 4px; border: 1px solid #333; margin-bottom: 8px;">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #10b981; font-weight: bold; font-size: 12px;">
+                <input type="checkbox" id="chkFixProfile" checked>
+                Corrigir Perfil de Cor (Auto)
+            </label>
+            <p style="font-size: 9px; color: #71717a; margin: 3px 0 0 20px;">Recupera cores lavadas por IAs (Magic Eraser) forçando o perfil RGB original.</p>
         </div>
 
         <div id="historyList" class="history-container">
             </div>
-        
     </div>
 
     <script src="main.js"></script>
