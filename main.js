@@ -18,6 +18,9 @@ window.onload = function() {
         document.getElementById('btnSync').addEventListener('click', syncFromPhotoshop);
         document.getElementById('btnRefresh').addEventListener('click', checkFilesReady);
         document.getElementById('btnClearHistory').addEventListener('click', clearAllHistory);
+        
+        // NOVO LISTENER: Botão de Sniper
+        document.getElementById('btnApplyAll').addEventListener('click', applyAllAutomated);
     } catch (e) {
         document.getElementById('folderPathDisplay').innerText = "Modo de teste";
     }
@@ -71,11 +74,9 @@ function createFullWidthSelection() {
 function syncFromPhotoshop() {
     if (!destinationFolder) { alert("Selecione a pasta primeiro."); return; }
     
-    // CAPTURA O NOME DA PÁGINA
     csInterface.evalScript('app.activeDocument.name.replace(/\\.[^\\.]+$/, "")', function(docName) {
         if (!docName || docName === "EvalScript error.") docName = "Page";
         
-        // Limpa o nome para o ID ficar bonito
         const safeDocName = docName.replace(/[^a-zA-Z0-9_-]/g, '');
         const id = imageCounter + " Img" + safeDocName;
         imageCounter++; 
@@ -111,6 +112,57 @@ function checkFilesReady() {
         }
     });
     if (changed) { saveSettings(); renderHistory(); }
+}
+
+// === O NOVO MOTOR SNIPER ===
+function applyAllAutomated() {
+    const readyItems = history.filter(item => item.status === 'ready');
+    if (readyItems.length === 0) {
+        alert("Não há recortes 'Prontos' na lista.");
+        return;
+    }
+
+    const groups = {};
+    readyItems.forEach(item => {
+        const docNameMatch = item.id.split(' Img');
+        const docName = docNameMatch.length > 1 ? docNameMatch[1] : "Desconhecido";
+        if (!groups[docName]) groups[docName] = [];
+        groups[docName].push(item);
+    });
+
+    const fixProfile = document.getElementById('chkFixProfile').checked;
+    const groupKeys = Object.keys(groups);
+    let currentGroupIndex = 0;
+
+    function processNextGroup() {
+        if (currentGroupIndex >= groupKeys.length) {
+            renderHistory(); 
+            alert("Operação em Lote Concluída! Recortes aplicados em suas respectivas abas.");
+            return;
+        }
+
+        const docName = groupKeys[currentGroupIndex];
+        const items = groups[docName];
+
+        // Cria uma string ultra-leve para mandar as posições pro Photoshop
+        const batchStr = items.map(item => {
+            const safePath = path.join(destinationFolder, item.filename).replace(/\\/g, '/');
+            return `${safePath}|${item.coords.left}|${item.coords.top}|${item.coords.width}|${item.coords.height}`;
+        }).join(";;;");
+
+        csInterface.evalScript(`applyBatchToDocument("${docName}", "${batchStr}", ${fixProfile})`, function(result) {
+            if (result && result.startsWith("Erro")) {
+                alert(`Erro na página ${docName}: ${result}`);
+            } else {
+                items.forEach(item => item.status = 'done');
+                saveSettings();
+            }
+            currentGroupIndex++;
+            processNextGroup();
+        });
+    }
+
+    processNextGroup();
 }
 
 function applyToLayer(id) {

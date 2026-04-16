@@ -104,3 +104,90 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         return "Erro|" + e.toString();
     }
 }
+
+function applyBatchToDocument(docName, batchStr, fixProfile) {
+    var originalDialogs = app.displayDialogs;
+    app.displayDialogs = DialogModes.NO;
+    var originalRuler = app.preferences.rulerUnits;
+
+    try {
+        app.preferences.rulerUnits = Units.PIXELS;
+
+        // 1. PROCURA A ABA CORRETA NO PHOTOSHOP
+        var targetDoc = null;
+        for (var i = 0; i < app.documents.length; i++) {
+            var dName = app.documents[i].name.replace(/\.[^\.]+$/, ""); // Remove o ".psd" se houver
+            var safeDName = dName.replace(/[^a-zA-Z0-9_-]/g, ''); // Limpa igual no ID
+            
+            if (dName === docName || safeDName === docName) {
+                targetDoc = app.documents[i];
+                break;
+            }
+        }
+
+        if (!targetDoc) {
+            app.preferences.rulerUnits = originalRuler;
+            app.displayDialogs = originalDialogs;
+            return "Erro|A aba base (" + docName + ") nao esta aberta no Photoshop.";
+        }
+
+        app.activeDocument = targetDoc;
+
+        // 2. PREPARA A ÚLTIMA CAMADA (A IMAGEM BASE)
+        var bottomLayer = targetDoc.layers[targetDoc.layers.length - 1];
+        if (bottomLayer.isBackgroundLayer) {
+            bottomLayer.isBackgroundLayer = false; // Destranca para podermos colar coisas nela
+        }
+
+        // 3. ATIRA OS RECORTES UM POR UM
+        var items = batchStr.split(";;;");
+        for (var j = 0; j < items.length; j++) {
+            var parts = items[j].split("|");
+            var cleanPath = parts[0];
+            var left = parseFloat(parts[1]);
+            var top = parseFloat(parts[2]);
+            var width = parseFloat(parts[3]);
+            var height = parseFloat(parts[4]);
+
+            var file = new File(cleanPath);
+            if (!file.exists) continue;
+
+            // Abre, Copia e Fecha
+            var tempDoc = app.open(file);
+            if (fixProfile === true || fixProfile === "true") tempDoc.colorProfileType = ColorProfile.WORKING;
+            tempDoc.selection.selectAll();
+            tempDoc.selection.copy();
+            tempDoc.close(SaveOptions.DONOTSAVECHANGES);
+
+            // Cola a imagem exatamente ACIMA da camada de fundo
+            app.activeDocument = targetDoc;
+            targetDoc.activeLayer = bottomLayer; 
+            targetDoc.paste();
+
+            var newLayer = targetDoc.activeLayer;
+
+            // Posiciona e Redimensiona
+            var currentLeft = newLayer.bounds[0].value;
+            var currentTop = newLayer.bounds[1].value;
+            newLayer.translate(left - currentLeft, top - currentTop);
+
+            var currentW = newLayer.bounds[2].value - newLayer.bounds[0].value;
+            var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
+            newLayer.resize((width / currentW) * 100, (height / currentH) * 100, AnchorPosition.TOPLEFT);
+
+            // 4. A FUSÃO (Merge)
+            newLayer.merge(); // Achata o recorte com a camada de baixo!
+            
+            // Atualiza a referência: a camada achatada é o novo 'fundo'
+            bottomLayer = targetDoc.activeLayer; 
+        }
+
+        app.preferences.rulerUnits = originalRuler;
+        app.displayDialogs = originalDialogs;
+        return "OK";
+    } catch(e) {
+        app.preferences.rulerUnits = originalRuler || Units.PIXELS;
+        app.displayDialogs = originalDialogs;
+        return "Erro|" + e.toString();
+    }
+}
