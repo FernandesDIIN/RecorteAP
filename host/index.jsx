@@ -116,8 +116,8 @@ function applyBatchToDocument(docName, batchStr, fixProfile) {
         // 1. PROCURA A ABA CORRETA NO PHOTOSHOP
         var targetDoc = null;
         for (var i = 0; i < app.documents.length; i++) {
-            var dName = app.documents[i].name.replace(/\.[^\.]+$/, ""); // Remove o ".psd" se houver
-            var safeDName = dName.replace(/[^a-zA-Z0-9_-]/g, ''); // Limpa igual no ID
+            var dName = app.documents[i].name.replace(/\.[^\.]+$/, ""); 
+            var safeDName = dName.replace(/[^a-zA-Z0-9_-]/g, ''); 
             
             if (dName === docName || safeDName === docName) {
                 targetDoc = app.documents[i];
@@ -133,10 +133,23 @@ function applyBatchToDocument(docName, batchStr, fixProfile) {
 
         app.activeDocument = targetDoc;
 
-        // 2. PREPARA A ÚLTIMA CAMADA (A IMAGEM BASE)
+        // 2. O NOVO RASTREADOR DE CAMADA BASE
         var bottomLayer = targetDoc.layers[targetDoc.layers.length - 1];
-        if (bottomLayer.isBackgroundLayer) {
-            bottomLayer.isBackgroundLayer = false; // Destranca para podermos colar coisas nela
+        var baseImageLayer = bottomLayer; // O Background é a última tentativa (Fallback)
+
+        // Escaneia de baixo para cima procurando a primeira imagem "solta" (LayerKind.NORMAL)
+        for (var k = targetDoc.layers.length - 2; k >= 0; k--) {
+            var currentLayer = targetDoc.layers[k];
+            // Queremos uma camada de imagem real, não pastas ou textos
+            if (currentLayer.typename === "ArtLayer" && currentLayer.kind === LayerKind.NORMAL) {
+                baseImageLayer = currentLayer;
+                break; // Achou! Para a busca.
+            }
+        }
+
+        // Se a escolhida for o fundo trancado, nós destrancamos
+        if (baseImageLayer.isBackgroundLayer) {
+            baseImageLayer.isBackgroundLayer = false; 
         }
 
         // 3. ATIRA OS RECORTES UM POR UM
@@ -159,9 +172,9 @@ function applyBatchToDocument(docName, batchStr, fixProfile) {
             tempDoc.selection.copy();
             tempDoc.close(SaveOptions.DONOTSAVECHANGES);
 
-            // Cola a imagem exatamente ACIMA da camada de fundo
+            // Cola a imagem exatamente ACIMA da camada de imagem detectada
             app.activeDocument = targetDoc;
-            targetDoc.activeLayer = bottomLayer; 
+            targetDoc.activeLayer = baseImageLayer; 
             targetDoc.paste();
 
             var newLayer = targetDoc.activeLayer;
@@ -176,10 +189,10 @@ function applyBatchToDocument(docName, batchStr, fixProfile) {
             newLayer.resize((width / currentW) * 100, (height / currentH) * 100, AnchorPosition.TOPLEFT);
 
             // 4. A FUSÃO (Merge)
-            newLayer.merge(); // Achata o recorte com a camada de baixo!
+            newLayer.merge(); // Achata o recorte com a camada rastreada!
             
-            // Atualiza a referência: a camada achatada é o novo 'fundo'
-            bottomLayer = targetDoc.activeLayer; 
+            // Atualiza a referência: a camada achatada é a nova base para o próximo recorte
+            baseImageLayer = targetDoc.activeLayer; 
         }
 
         app.preferences.rulerUnits = originalRuler;
