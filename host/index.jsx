@@ -60,13 +60,12 @@ function syncFromPhotoshop(folderPath, id) {
 }
 
 function applyToLayer(imagePath, left, top, width, height, fixProfile) {
-    // 🛡️ MODO SILENCIOSO ATIVADO
     var originalDialogs = app.displayDialogs;
     app.displayDialogs = DialogModes.NO; 
+    var originalRuler = app.preferences.rulerUnits;
     
     try {
-        var originalDoc = app.activeDocument;
-        var originalRuler = app.preferences.rulerUnits;
+        var targetDoc = app.activeDocument;
         app.preferences.rulerUnits = Units.PIXELS;
         var cleanPath = imagePath.replace(/\\/g, '/');
         
@@ -76,6 +75,23 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
             return "Erro|Arquivo não encontrado.";
         }
 
+        // 1. RASTREAMENTO DA CAMADA BASE (Mesma lógica do Batch)
+        var bottomLayer = targetDoc.layers[targetDoc.layers.length - 1];
+        var baseImageLayer = bottomLayer; 
+
+        for (var k = targetDoc.layers.length - 2; k >= 0; k--) {
+            var currentLayer = targetDoc.layers[k];
+            if (currentLayer.typename === "ArtLayer" && currentLayer.kind === LayerKind.NORMAL) {
+                baseImageLayer = currentLayer;
+                break;
+            }
+        }
+
+        if (baseImageLayer.isBackgroundLayer) {
+            baseImageLayer.isBackgroundLayer = false; 
+        }
+
+        // 2. PROCESSO DE COLAGEM
         var tempDoc = app.open(file);
         if (fixProfile === true || fixProfile === "true") {
             tempDoc.colorProfileType = ColorProfile.WORKING; 
@@ -85,9 +101,11 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         tempDoc.selection.copy();
         tempDoc.close(SaveOptions.DONOTSAVECHANGES);
 
-        originalDoc.paste();
-        var newLayer = originalDoc.activeLayer;
+        // 3. POSICIONAMENTO E FUSÃO
+        targetDoc.activeLayer = baseImageLayer; 
+        targetDoc.paste();
         
+        var newLayer = targetDoc.activeLayer;
         var currentLeft = newLayer.bounds[0].value;
         var currentTop = newLayer.bounds[1].value;
         newLayer.translate(parseFloat(left) - currentLeft, parseFloat(top) - currentTop);
@@ -96,11 +114,15 @@ function applyToLayer(imagePath, left, top, width, height, fixProfile) {
         var currentH = newLayer.bounds[3].value - newLayer.bounds[1].value;
         newLayer.resize((parseFloat(width) / currentW) * 100, (parseFloat(height) / currentH) * 100, AnchorPosition.TOPLEFT);
 
+        // A Mágica: Mescla com a camada detectada
+        newLayer.merge();
+
         app.preferences.rulerUnits = originalRuler;
-        app.displayDialogs = originalDialogs; // Devolve ao normal
+        app.displayDialogs = originalDialogs;
         return "OK";
     } catch(e) {
         app.displayDialogs = originalDialogs;
+        app.preferences.rulerUnits = originalRuler;
         return "Erro|" + e.toString();
     }
 }
