@@ -1,41 +1,66 @@
-# RecorteAP ✂️ Feito em Angola.
+**RecorteAP** é uma extensão para Adobe Photoshop que facilita a exportação e a reaplicação de áreas de uma página. Foi criada para fluxos de edição em que recortes são tratados fora do Photoshop e depois precisam voltar à posição original.
 
-Um plugin Adobe CEP nativo para Photoshop. Ideal para quem utiliza editores que sofre com o realinhamento de imagens.
+O painel registra as coordenadas de cada seleção, exporta o recorte e permite reaplicá-lo à página, ajustando suas dimensões quando a imagem editada retorna com outro tamanho.
 
-## 🚀 O Problema que Resolvemos
-Tirar um recorte do Photoshop, e depois tentar encaixar essa imagem editada de volta no documento original (muitas vezes com a resolução alterada) é um processo lento e impreciso. O **RecorteAP** automatiza a extração e a reinserção milimétrica.
+Desenvolvido em Angola.
 
-## ✨ Funcionalidades
+## Funcionalidades
 
-- **Extração Rápida (Sync):** Recorta a área selecionada, salva como JPG em uma pasta escolhida e memoriza as coordenadas e proporções originais no histórico.
-- **Letreiro de Largura Total:** Ferramenta dedicada para selecionar a página de ponta a ponta horizontalmente em um clique.
-- **Trabalho em Lote:** Fatie múltiplos balões e cenas sequencialmente (os arquivos são salvos como `1 Img.jpg`, `2 Img.jpg`, etc.).
-- **Reinserção Cirúrgica (Apply to Layer):** Reinsere a imagem editada exatamente na mesma coordenada. Se a IA externa redimensionou a sua imagem (upscaling), o plugin calcula a diferença e "esmaga" a imagem de volta para o tamanho e posição originais automaticamente.
-- **Recuperação de Cor (Saturação):** O plugin aplica um ajuste de Saturação nativo do Photoshop no momento da colagem para restaurar a vivacidade se necessario.
-- **Limpeza Total:** Com um clique, apague o histórico do painel e exclua os JPGs residuais do seu HD para iniciar o próximo capítulo com a pasta limpa.
+- **Captura de seleções:** exporta a área selecionada como JPG e registra suas coordenadas e dimensões.
+- **Vários recortes:** permite capturar e acompanhar diferentes áreas pelo histórico do painel.
+- **Reaplicação dos recortes:** aplica os arquivos editados à página correspondente, ajustando tamanho e posição conforme as coordenadas registradas.
+- **Aplicação em lote:** processa os recortes pendentes e permite interromper o processo após o recorte em andamento.
+- **Gerenciamento de cor:** oferece conversão para o perfil da página e ajuste opcional para aproximar brilho e cores da referência original.
+- **Histórico e arquivos:** permite verificar arquivos, importar recortes da pasta, salvar coordenadas e limpar itens do histórico.
 
-## 🛠️ Instalação (Windows)
+## Requisitos
 
-A forma mais fácil de instalar é usando o nosso instalador automático:
+- Windows e Adobe Photoshop com suporte a extensões CEP.
+- O manifesto da versão 1.2.6 declara suporte ao Photoshop a partir da versão **20.0**.
+- Um documento aberto no Photoshop e uma pasta de trabalho para os recortes.
 
-1. Baixe os arquivos do repositório (Download ZIP) e extraia no seu computador.
-2. Dê um clique duplo no arquivo **`install.bat`**.
-3. Ele copiará os arquivos para a pasta correta e liberará o registro da Adobe para extensões (`PlayerDebugMode`) automaticamente.
-4. Abra o Photoshop.
+## Instalação no Windows
 
-*(Para instalar no Mac: Copie a pasta `RecorteAP` para `/Library/Application Support/Adobe/CEP/extensions/` e ative o PlayerDebugMode via Terminal).*
+1. Baixe o pacote de instalação na seção **Releases** deste repositório.
+2. Extraia o arquivo ZIP.
+3. Mantenha a pasta `RecorteAP` e os arquivos do instalador juntos.
+4. Execute **`Instalar.cmd`** e siga as instruções exibidas.
+5. Reinicie o Photoshop e abra **Janela > Extensões > RecorteAP**.
 
-## 📖 Como Usar no Dia a Dia
+> O pacote de instalação pode habilitar o `PlayerDebugMode`, necessário para carregar a extensão CEP. Consulte o arquivo `LEIA-ME.txt` incluído no pacote para mais detalhes.
 
-1. Vá em **Janela > Extensões > RecorteAP**.
-2. Clique em **Selecionar Pasta de Destino** e escolha sua pasta de trabalho (ex: `C:\Webtoons\Recortes`).
-3. Faça uma seleção no seu mangá e clique em **Sync from Photoshop**.
-4. Edite a imagem gerada no seu celular ou na sua IA preferida (Atenção: **não altere o nome do arquivo**).
-5. Salve a imagem editada na mesma pasta.
-6. No painel do Photoshop, clique em **Atualizar** para a luz do arquivo ficar Verde.
-7. Escolha a saturação desejada (+1, +2) e clique em **Apply to Layer**. 
+## Como usar
 
-Pronto! A imagem será colada e realinhada instantaneamente.
+### 1. Capture os recortes
 
----
-*Construído com foco em usabilidade para longas jornadas de edição.*
+1. Abra a página no Photoshop.
+2. No painel do RecorteAP, clique em **Selecionar pasta** e escolha onde salvar os arquivos.
+3. Faça uma seleção retangular na área desejada. O botão **Ativar letreiro retangular** ajuda a selecionar a ferramenta.
+4. Clique em **Capturar recorte**.
+5. Repita o processo para as demais áreas que deseja editar.
+
+### 2. Edite os arquivos
+
+Abra os JPGs gerados no editor de sua preferência. Ao salvar os resultados, mantenha os nomes dos arquivos e coloque-os na pasta de recortes para que o painel possa encontrá-los.
+
+### 3. Aplique os recortes editados
+
+1. Abra no Photoshop as páginas correspondentes aos recortes.
+2. No painel, clique em **Verificar arquivos**.
+3. Se necessário, ajuste as opções de perfil, brilho e cores.
+4. Clique em **Aplicar todos os pendentes**.
+
+O RecorteAP identifica a página de origem e usa as coordenadas registradas para posicionar cada recorte. Se a página tiver sido redimensionada após a captura, pode ser necessário capturar a área novamente.
+
+## Organização do histórico
+
+O painel oferece opções para salvar coordenadas, importar recortes e remover itens já aplicados. A opção **Excluir todos e arquivos** também remove os arquivos associados: use-a somente quando não precisar mais deles.
+
+## Problemas de instalação
+
+Se o painel não aparecer no Photoshop:
+
+- Confirme que os arquivos foram extraídos antes de executar o instalador.
+- Feche e abra o Photoshop novamente.
+- Verifique as instruções do `LEIA-ME.txt` fornecido com o pacote.
+- Confira se sua versão do Photoshop aceita extensões CEP.
