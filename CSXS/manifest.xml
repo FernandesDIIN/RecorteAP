@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ExtensionManifest Version="7.0" ExtensionBundleId="com.recorteap.panel" ExtensionBundleVersion="1.0.0"
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.recorteap.panel" ExtensionBundleVersion="1.2.6"
     ExtensionBundleName="RecorteAP" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <ExtensionList>
-        <Extension Id="com.recorteap.panel" Version="1.0.0" />
+        <Extension Id="com.recorteap.panel" Version="1.2.6" />
     </ExtensionList>
     <ExecutionEnvironment>
         <HostList>
-            <Host Name="PHXS" Version="[15.0,99.9]" />
-            <Host Name="PHSP" Version="[15.0,99.9]" />
+            <Host Name="PHXS" Version="[20.0,99.9]" />
+            <Host Name="PHSP" Version="[20.0,99.9]" />
         </HostList>
         <LocaleList>
             <Locale Code="All" />
         </LocaleList>
         <RequiredRuntimeList>
-            <RequiredRuntime Name="CSXS" Version="7.0" />
+            <RequiredRuntime Name="CSXS" Version="9.0" />
         </RequiredRuntimeList>
     </ExecutionEnvironment>
     <DispatchInfoList>
@@ -33,6 +33,13 @@
                 <UI>
                     <Type>Panel</Type>
                     <Menu>RecorteAP</Menu>
+                    <Icons>
+                        <Icon Type="Normal">./icons/normal.png</Icon>
+                        <Icon Type="RollOver">./icons/rollover.png</Icon>
+                        <Icon Type="Disabled">./icons/disabled.png</Icon>
+                        <Icon Type="DarkNormal">./icons/dark-normal.png</Icon>
+                        <Icon Type="DarkRollOver">./icons/dark-rollover.png</Icon>
+                    </Icons>
                     <Geometry>
                         <Size>
                             <Height>600</Height>
@@ -47,18 +54,6 @@
                             <Width>2000</Width>
                         </MaxSize>
                     </Geometry>
-                    <Icons>
-                        <Icon Type="Normal" Path="./icons/icon16.png"/>
-                        <Icon Type="RollOver" Path="./icons/icon16.png"/>
-                        <Icon Type="Disabled" Path="./icons/icon16.png"/>
-                        <Icon Type="DarkNormal" Path="./icons/icon16.png"/>
-                        <Icon Type="DarkRollOver" Path="./icons/icon16.png"/>
-                        <Icon Type="Normal" Path="./icons/icon24.png"/>
-                        <Icon Type="Normal" Path="./icons/icon32.png"/>
-                        <Icon Type="Normal" Path="./icons/icon48.png"/>
-                        <Icon Type="Normal" Path="./icons/icon64.png"/>
-                        <Icon Type="Normal" Path="./icons/icon128.png"/>
-                    </Icons>
                 </UI>
             </DispatchInfo>
         </Extension>

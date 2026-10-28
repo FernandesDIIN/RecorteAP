@@ -1,45 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>RecorteAP</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="CSInterface.js"></script>
-</head>
-<body>
-    <div class="section">
-        <h2>1. Setup</h2>
-        <button id="btnChooseFolder">Selecionar Pasta de Destino</button>
-        <div id="folderPathDisplay">Nenhuma pasta selecionada</div>
-    </div>
-
-    <div class="section">
-        <h2>2. Despacho</h2>
-        <button id="btnFullWidth" style="border-left: 3px solid var(--accent-color);">Letreiro Largura Total (Rosa)</button>
-        <button id="btnSync" class="primary">Recortar</button>
-    </div>
-
-    <div class="section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <h2 style="margin: 0; border: none;">Histórico / Recepção</h2>
-            <div style="display: flex; gap: 5px;">
-                <button id="btnApplyAll" style="width: auto; padding: 3px 8px; margin: 0; background-color: #f59e0b; color: #000; font-weight: bold; border: none;">⚡ Aplicar Tudo</button>
-                <button id="btnRefresh" style="width: auto; padding: 3px 8px; margin: 0;">Atualizar</button>
-                <button id="btnClearHistory" style="width: auto; padding: 3px 8px; margin: 0; background-color: #5a1a1a; border-color: #ff4081;">Limpar Tudo</button>
-            </div>
-        </div>
-        
-        <div style="background: #1e1e1e; padding: 6px 8px; border-radius: 4px; border: 1px solid #333; margin-bottom: 8px;">
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #10b981; font-weight: bold; font-size: 12px;">
-                <input type="checkbox" id="chkFixProfile" checked>
-                Corrigir Perfil de Cor (Auto)
-            </label>
-        </div>
-
-        <div id="historyList" class="history-container">
-        </div>
-    </div>
-
-    <script src="main.js"></script>
-</body>
-</html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RecorteAP</title><link rel="stylesheet" href="style.css"></head><body>
+<header><h1>RecorteAP <small>1.2.6</small></h1></header>
+<section><h2>Pasta de recortes</h2><button id="btnChooseFolder">Selecionar pasta</button><p id="folderPathDisplay" class="hint"></p></section>
+<section><h2>Capturar seleção</h2><button id="btnFullWidth">Ativar letreiro retangular</button><button id="btnSync" class="primary">Capturar recorte</button></section>
+<section><h2>Aplicar recortes editados</h2><label><input id="chkFixProfile" type="checkbox" checked> Converter para o perfil da página</label><label for="matchStrength">Aproximar brilho e cores do original (%)</label><input id="matchStrength" type="number" min="0" max="100" step="10" value="0"><button id="btnApplyAll" class="primary">Aplicar todos os pendentes</button><progress id="progress" max="100" value="0"></progress><button id="btnCancel" hidden>Parar após este recorte</button></section>
+<section><h2>Histórico</h2><div class="toolbar"><button id="btnRefresh">Verificar arquivos</button><button id="btnImport">Importar da pasta</button><button id="btnSaveCoords">Salvar coordenadas</button><button id="btnClearHistory">Excluir só aplicados</button><button id="btnDeleteAll">Excluir todos e arquivos</button></div><div id="historyList"></div></section>
+<button id="btnRecover" disabled>Verificar comunicação</button><p id="status" role="status" aria-live="polite">Conectando…</p><script src="main.js"></script></body></html>
